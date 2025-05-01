@@ -1,0 +1,14 @@
+DROP TABLE IF EXISTS "user_profiles";
+DROP TABLE IF EXISTS "otc_quotes";
+DROP TABLE IF EXISTS "recipients";
+DROP TABLE IF EXISTS "transfers";
+DROP TABLE IF EXISTS "minting_bank_deposits";
+DROP TABLE IF EXISTS "minting_history";
+DROP TABLE IF EXISTS "minter_tokens";
+DROP TABLE IF EXISTS "balances";
+DROP TABLE IF EXISTS "wallets";
+DROP TABLE IF EXISTS "minters";
+DROP TABLE IF EXISTS "organization_banks";
+DROP TABLE IF EXISTS "migrations";
+DROP TABLE IF EXISTS "organizations";
+DROP TABLE IF EXISTS "users";

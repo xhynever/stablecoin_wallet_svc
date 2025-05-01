@@ -1,0 +1,76 @@
+# 新增sql
+
+```sql
+-- 钱包提供商
+CREATE TABLE wallet_providers (
+  id TEXT PRIMARY KEY,
+  name TEXT NOT NULL,
+  provider_type TEXT NOT NULL CHECK (provider_type IN ('fireblocks','hex_trust','self_custody')), -- 托管类型
+  credentials JSONB NOT NULL, -- 凭证
+  status TEXT NOT NULL DEFAULT 'active' CHECK (status IN ('active','inactive')), -- 状态：活跃，不活跃
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT now(), -- 创建时间
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT now()  -- 更新时间
+);
+
+
+
+-- 访问控制
+CREATE TABLE wallet_access_controls (
+  wallet_id TEXT REFERENCES wallets(id) ON DELETE CASCADE, -- 钱包 ID
+  user_id TEXT REFERENCES users(id) ON DELETE CASCADE, -- 用户 ID
+  access_level TEXT NOT NULL CHECK (access_level IN ('owner','admin','operator','viewer')), -- 访问级别：所有者，管理员，操作员，查看者
+  daily_limit NUMERIC, -- 每日限额
+  approval_required BOOLEAN DEFAULT FALSE, -- 是否需要审批
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT now(), -- 创建时间
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT now(), -- 更新时间
+  PRIMARY KEY(wallet_id, user_id) -- 主键：钱包 ID，用户 ID
+);
+
+-- 交易签名
+CREATE TABLE transaction_signatures (
+  id TEXT PRIMARY KEY,
+  wallet_id TEXT REFERENCES wallets(id) ON DELETE CASCADE, -- 钱包 ID
+  unsigned_tx JSONB NOT NULL, -- 未签名交易
+  signed_tx JSONB, -- 已签名交易
+  status TEXT NOT NULL CHECK (status IN ('pending_signature','signed','rejected','submitted','failed','confirmed')), -- 状态：待签名，已签名，已拒绝，已提交，失败，已确认
+  expires_at TIMESTAMP WITH TIME ZONE, -- 过期时间
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT now(), -- 创建时间
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT now()  -- 更新时间
+);
+```
+
+
+
+
+# 生产钱包
+
+-- 钱包 (当前生产形态)
+CREATE TABLE wallets (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    blockchain TEXT NOT NULL,
+    address TEXT NOT NULL,
+    status TEXT DEFAULT 'active',
+    created_at TEXT NOT NULL,
+    details TEXT,
+    FOREIGN KEY (user_id) REFERENCES users (id)
+);
+
+
+-- 更新钱包
+CREATE TABLE wallets (
+  id TEXT PRIMARY KEY,
+  organization_id TEXT REFERENCES organizations(id), -- 组织 ID
+  provider_type TEXT NOT NULL CHECK (provider_type IN ('metamask','fireblocks','hex_trust','self_custody')), -- 提供商类型，self_custody = 保留 (阶段 2)
+  wallet_provider TEXT REFERENCES wallet_providers(id), -- 钱包提供商 ID
+  blockchain TEXT NOT NULL, -- 区块链
+  network TEXT NOT NULL, -- 网络
+  address TEXT NOT NULL, -- 地址
+  status TEXT NOT NULL DEFAULT 'pending_configuration' -- 状态：活跃，待配置，不活跃，已暂停
+         CHECK (status IN ('active','pending_configuration','inactive','suspended')),
+  default_wallet BOOLEAN NOT NULL DEFAULT FALSE, -- 是否默认钱包
+  description TEXT, -- 描述
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT now(), -- 创建时间
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT now(), -- 更新时间
+  UNIQUE(blockchain, network, address) -- 唯一约束：区块链、网络、地址
+);
